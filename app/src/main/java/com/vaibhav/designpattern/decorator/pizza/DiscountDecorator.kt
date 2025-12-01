@@ -11,7 +11,10 @@ class DiscountDecorator(
     override val size: Size
         get() = pizza.size
 
-    override fun cost(): Double {
-        return pizza.cost() * (1.0 - discountPercent)
+    override fun getLineItems(): List<Pair<String, Double>> {
+        val items = pizza.getLineItems()
+        val totalCost = items.sumOf { it.second }
+        val discountAmount = totalCost * discountPercent
+        return items + ("Discount (${(discountPercent * 100).toInt()}%)" to -discountAmount)
     }
 }

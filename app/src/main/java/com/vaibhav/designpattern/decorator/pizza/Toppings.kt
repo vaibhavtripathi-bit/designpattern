@@ -5,8 +5,8 @@ class Cheese(private val pizza: Pizza) : PizzaToppingDecorator() {
     override val description: String
         get() = pizza.description + ", Cheese"
 
-    override fun cost(): Double {
-        return 0.50 + pizza.cost()
+    override fun getLineItems(): List<Pair<String, Double>> {
+        return pizza.getLineItems() + ("Cheese" to 0.50)
     }
 }
 
@@ -15,8 +15,8 @@ class Pepperoni(private val pizza: Pizza) : PizzaToppingDecorator() {
     override val description: String
         get() = pizza.description + ", Pepperoni"
 
-    override fun cost(): Double {
-        return 1.50 + pizza.cost()
+    override fun getLineItems(): List<Pair<String, Double>> {
+        return pizza.getLineItems() + ("Pepperoni" to 1.50)
     }
 }
 
@@ -25,7 +25,7 @@ class Mushroom(private val pizza: Pizza) : PizzaToppingDecorator() {
     override val description: String
         get() = pizza.description + ", Mushroom"
 
-    override fun cost(): Double {
-        return 0.75 + pizza.cost()
+    override fun getLineItems(): List<Pair<String, Double>> {
+        return pizza.getLineItems() + ("Mushroom" to 0.75)
     }
 }
