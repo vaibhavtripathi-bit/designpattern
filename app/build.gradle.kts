@@ -58,4 +58,10 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)}
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.1.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+}

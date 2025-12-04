@@ -10,11 +10,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 
-class BatteryRepositoryImpl(
-    private val context: Context
-) : BatteryRepository {
+import com.vaibhav.designpattern.battery.domain.repository.NetworkRepository
+import com.vaibhav.designpattern.util.AndroidLogger
+import com.vaibhav.designpattern.util.Logger
 
-    private val networkRepository = NetworkRepositoryImpl(context)
+class BatteryRepositoryImpl(
+    private val context: Context,
+    private val networkRepository: NetworkRepository = NetworkRepositoryImpl(context),
+    private val logger: Logger = AndroidLogger()
+) : BatteryRepository {
 
     override suspend fun getBatteryUsage(topX: Int, lastMinutes: Int): List<BatteryModel> {
         val endTime = System.currentTimeMillis()
@@ -24,7 +28,7 @@ class BatteryRepositoryImpl(
 
     override suspend fun getBatteryUsage(startTime: Long, endTime: Long, topX: Int): List<BatteryModel> {
         return withContext(Dispatchers.IO) {
-            Log.d("vaibhav", "getBatteryUsage: startTime=$startTime, endTime=$endTime, topX=$topX")
+            logger.d("vaibhav", "getBatteryUsage: startTime=$startTime, endTime=$endTime, topX=$topX")
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
             val packageManager = context.packageManager
 
@@ -37,11 +41,11 @@ class BatteryRepositoryImpl(
             val activePackages = mutableSetOf<String>()
             var boundaryCrossed = false
 
-            Log.d("vaibhav", "Iterating events from lookbackTime=$lookbackTime...")
+            logger.d("vaibhav", "Iterating events from lookbackTime=$lookbackTime...")
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
                 
-                //Log.d("vaibhav", "Event: pkg=${event.packageName}, type=${event.eventType}, time=${event.timeStamp}")
+                //logger.d("vaibhav", "Event: pkg=${event.packageName}, type=${event.eventType}, time=${event.timeStamp}")
 
                 if (event.timeStamp < startTime) {
                     // Processing events before the requested window to determine initial state
@@ -56,7 +60,7 @@ class BatteryRepositoryImpl(
                 } else {
                     // We have crossed into the requested window [startTime, endTime]
                     if (!boundaryCrossed) {
-                        Log.d("vaibhav", "Crossed startTime boundary. Active packages: $activePackages")
+                        logger.d("vaibhav", "Crossed startTime boundary. Active packages: $activePackages")
                         activePackages.forEach { pkg ->
                             startTimes[pkg] = startTime
                         }
@@ -66,18 +70,18 @@ class BatteryRepositoryImpl(
 
                     when (event.eventType) {
                         android.app.usage.UsageEvents.Event.MOVE_TO_FOREGROUND -> {
-                            Log.d("vaibhav", "FG Event: ${event.packageName} at ${event.timeStamp}")
+                            logger.d("vaibhav", "FG Event: ${event.packageName} at ${event.timeStamp}")
                             startTimes[event.packageName] = event.timeStamp
                         }
                         android.app.usage.UsageEvents.Event.MOVE_TO_BACKGROUND -> {
                             val start = startTimes[event.packageName]
                             if (start != null) {
                                 val duration = event.timeStamp - start
-                                Log.d("vaibhav", "BG Event: ${event.packageName} at ${event.timeStamp}. Duration: ${duration}ms")
+                                logger.d("vaibhav", "BG Event: ${event.packageName} at ${event.timeStamp}. Duration: ${duration}ms")
                                 appUsageMap[event.packageName] = (appUsageMap[event.packageName] ?: 0L) + duration
                                 startTimes.remove(event.packageName)
                             } else {
-                                Log.d("vaibhav", "BG Event without start time: ${event.packageName} at ${event.timeStamp}")
+                                logger.d("vaibhav", "BG Event without start time: ${event.packageName} at ${event.timeStamp}")
                             }
                         }
                     }
@@ -86,7 +90,7 @@ class BatteryRepositoryImpl(
 
             // Handle case where no events occurred after startTime (boundary never crossed in loop)
             if (!boundaryCrossed) {
-                Log.d("vaibhav", "No events after startTime. Active packages: $activePackages")
+                logger.d("vaibhav", "No events after startTime. Active packages: $activePackages")
                 activePackages.forEach { pkg ->
                     startTimes[pkg] = startTime
                 }
@@ -96,13 +100,13 @@ class BatteryRepositoryImpl(
             startTimes.forEach { (packageName, start) ->
                 val duration = endTime - start
                 if (duration > 0) {
-                    Log.d("vaibhav", "Ongoing usage at endTime: $packageName. Duration: ${duration}ms")
+                    logger.d("vaibhav", "Ongoing usage at endTime: $packageName. Duration: ${duration}ms")
                     appUsageMap[packageName] = (appUsageMap[packageName] ?: 0L) + duration
                 }
             }
 
             val totalUsageTime = appUsageMap.values.sum()
-            Log.d("vaibhav", "Total calculated usage time: $totalUsageTime ms")
+            logger.d("vaibhav", "Total calculated usage time: $totalUsageTime ms")
 
             // Fetch network usage
             val networkUsageMap = networkRepository.getNetworkUsage(startTime, endTime)
@@ -139,9 +143,9 @@ class BatteryRepositoryImpl(
                     }
                 }
             
-            Log.d("vaibhav", "Returning ${finalList.size} items")
+            logger.d("vaibhav", "Returning ${finalList.size} items")
             finalList.forEach {
-                Log.d("vaibhav", "App: ${it.appName}, Usage: ${it.usageDurationMinutes}m, ${it.usagePercentage}%")
+                logger.d("vaibhav", "App: ${it.appName}, Usage: ${it.usageDurationMinutes}m, ${it.usagePercentage}%")
             }
             
             finalList

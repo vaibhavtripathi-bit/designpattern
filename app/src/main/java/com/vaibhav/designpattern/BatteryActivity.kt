@@ -82,6 +82,7 @@ class BatteryActivity : ComponentActivity() {
                     initializer {
                         val repository = BatteryRepositoryImpl(context)
                         val useCase = GetTopBatteryUsageUseCase(repository)
+                        // BatteryTriggerManager will be created with default argument
                         BatteryViewModel(application, useCase, repository)
                     }
                 }

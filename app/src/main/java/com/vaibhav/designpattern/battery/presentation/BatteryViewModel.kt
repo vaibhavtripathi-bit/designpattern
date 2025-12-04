@@ -25,10 +25,9 @@ sealed class BatteryUiState {
 class BatteryViewModel(
     application: Application,
     private val getTopBatteryUsageUseCase: GetTopBatteryUsageUseCase,
-    private val batteryRepository: BatteryRepository
+    private val batteryRepository: BatteryRepository,
+    private val triggerManager: BatteryTriggerManager = BatteryTriggerManager(application)
 ) : AndroidViewModel(application) {
-
-    private val triggerManager = BatteryTriggerManager(application)
 
     private val _uiState = MutableStateFlow<BatteryUiState>(BatteryUiState.Loading)
     val uiState: StateFlow<BatteryUiState> = _uiState.asStateFlow()
